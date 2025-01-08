@@ -1,12 +1,9 @@
-// Import dependencies
-const express = require("express");
-const StudentController = require("../controllers/StudentController");
-const { body, validationResult } = require("express-validator");
+import express from "express";
+import StudentController from "../controllers/StudentController.js";
+import { body, validationResult } from "express-validator";
 
-// Inisialisasi router
 const router = express.Router();
 
-// Middleware validasi input untuk students
 const validateStudent = [
   body("nama").notEmpty().withMessage("Nama harus diisi"),
   body("nim").isNumeric().withMessage("NIM harus berupa angka"),
@@ -21,7 +18,6 @@ const validateStudent = [
   },
 ];
 
-// Middleware validasi untuk parameter ID
 const validateId = (req, res, next) => {
   const { id } = req.params;
   if (!/^\d+$/.test(id)) {
@@ -30,17 +26,14 @@ const validateId = (req, res, next) => {
   next();
 };
 
-// Rute utama
 router.get("/", (req, res) => {
   res.send("Welcome to Student API");
 });
 
-// Rute CRUD untuk students
 router.get("/students", StudentController.index);
 router.get("/students/:id", validateId, StudentController.show);
 router.post("/students", validateStudent, StudentController.store);
 router.put("/students/:id", validateId, validateStudent, StudentController.update);
 router.delete("/students/:id", validateId, StudentController.destroy);
 
-// Export router
-module.exports = router;
+export default router;

@@ -1,87 +1,71 @@
-// Import database
-const db = require("../config/database");
+import db from "../config/database.js";
+import { promisify } from "util";
+
+// Promisify db.query
+const query = promisify(db.query).bind(db);
 
 class Student {
   // Mengambil semua data students
-  static all() {
-    return new Promise((resolve, reject) => {
-      const sql = "SELECT * FROM students";
-      db.query(sql, (err, results) => {
-        if (err) {
-          console.error("Error fetching students:", err);
-          return reject(err);
-        }
-        resolve(results);
-      });
-    });
+  static async all() {
+    const sql = "SELECT * FROM students";
+    try {
+      const results = await query(sql);
+      return results;
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Menambahkan data student baru
-  static create(data) {
-    return new Promise((resolve, reject) => {
-      const sql = "INSERT INTO students (nama, nim, email, jurusan) VALUES (?, ?, ?, ?)";
-      db.query(sql, [data.nama, data.nim, data.email, data.jurusan], (err, results) => {
-        if (err) {
-          console.error("Error creating student:", err);
-          return reject(err);
-        }
-        resolve({ id: results.insertId, ...data });
-      });
-    });
+  static async create(data) {
+    const sql = "INSERT INTO students (nama, nim, email, jurusan) VALUES (?, ?, ?, ?)";
+    try {
+      const results = await query(sql, [data.nama, data.nim, data.email, data.jurusan]);
+      return { id: results.insertId, ...data };
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Memperbarui data student berdasarkan ID
-  static update(id, data) {
-    return new Promise((resolve, reject) => {
-      const sql = "UPDATE students SET nama = ?, nim = ?, email = ?, jurusan = ? WHERE id = ?";
-      db.query(sql, [data.nama, data.nim, data.email, data.jurusan, id], (err, results) => {
-        if (err) {
-          console.error(`Error updating student with ID ${id}:`, err);
-          return reject(err);
-        }
-        if (results.affectedRows === 0) {
-          return resolve(null); // Tidak ada baris yang diperbarui
-        }
-        resolve({ id, ...data });
-      });
-    });
+  static async update(id, data) {
+    const sql = "UPDATE students SET nama = ?, nim = ?, email = ?, jurusan = ? WHERE id = ?";
+    try {
+      const results = await query(sql, [data.nama, data.nim, data.email, data.jurusan, id]);
+      if (results.affectedRows === 0) return null; // Tidak ada baris diperbarui
+      return { id, ...data };
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Mencari data student berdasarkan ID
-  static findById(id) {
-    return new Promise((resolve, reject) => {
-      const sql = "SELECT * FROM students WHERE id = ?";
-      db.query(sql, [id], (err, results) => {
-        if (err) {
-          console.error(`Error finding student with ID ${id}:`, err);
-          return reject(err);
-        }
-        resolve(results[0] || null); // Return null jika tidak ditemukan
-      });
-    });
+  static async findById(id) {
+    const sql = "SELECT * FROM students WHERE id = ?";
+    try {
+      const results = await query(sql, [id]);
+      return results[0] || null; // Return null jika tidak ditemukan
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Menampilkan data student berdasarkan ID
-  static show(id) {
-    return this.findById(id); // Gunakan fungsi findById untuk konsistensi
+  static async show(id) {
+    return this.findById(id);
   }
 
   // Menghapus data student berdasarkan ID
-  static delete(id) {
-    return new Promise((resolve, reject) => {
-      const sql = "DELETE FROM students WHERE id = ?";
-      db.query(sql, [id], (err, results) => {
-        if (err) {
-          console.error(`Error deleting student with ID ${id}:`, err);
-          return reject(err);
-        }
-        if (results.affectedRows === 0) {
-          return resolve(null); // Tidak ada baris yang dihapus
-        }
-        resolve({ message: `Student dengan ID ${id} berhasil dihapus.` });
-      });
-    });
+  static async delete(id) {
+    const sql = "DELETE FROM students WHERE id = ?";
+    try {
+      const results = await query(sql, [id]);
+      if (results.affectedRows === 0) return null; // Tidak ada baris dihapus
+      return { message: `Student dengan ID ${id} berhasil dihapus.` };
+    } catch (err) {
+      throw err;
+    }
   }
 }
 
-module.exports = Student;
+export default Student;
