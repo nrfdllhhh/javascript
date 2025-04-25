@@ -1,77 +1,77 @@
-const students = require("../data/students"); // Path relatif ke data
+import Student from "../models/Student.js";
+import { validationResult } from "express-validator";
 
 class StudentController {
-  index(req, res) {
-    const data = {
-      message: "Menampilkan semua students",
-      data: students,
-    };
-    res.status(200).json(data);
+  async index(req, res) {
+    try {
+      const students = await Student.all();
+      res.json({ message: "Menampilkan semua students", data: students });
+    } catch (error) {
+      res.status(500).json({ message: "Kesalahan saat mengambil data students", error });
+    }
   }
 
-  store(req, res) {
-    const { nama } = req.body;
-
-    if (!nama) {
-      return res.status(400).json({
-        message: "Nama student harus diisi",
-      });
+  async show(req, res) {
+    try {
+      const { id } = req.params;
+      const student = await Student.show(id);
+      if (!student) {
+        return res.status(404).json({ message: `Student dengan id ${id} tidak ditemukan` });
+      }
+      res.json({ message: `Menampilkan student dengan id ${id}`, data: student });
+    } catch (error) {
+      res.status(500).json({ message: "Kesalahan saat mengambil student", error });
     }
-
-    const newStudent = { id: students.length + 1, nama };
-    students.push(newStudent);
-
-    const data = {
-      message: `Menambahkan data student: ${nama}`,
-      data: newStudent,
-    };
-    res.status(201).json(data);
   }
 
-  update(req, res) {
-    const { id } = req.params;
-    const { nama } = req.body;
-
-    const student = students.find((student) => student.id === parseInt(id));
-    if (!student) {
-      return res.status(404).json({
-        message: "Student tidak ditemukan",
-      });
+  async store(req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    if (!nama) {
-      return res.status(400).json({
-        message: "Nama student harus diisi",
-      });
+    try {
+      const student = await Student.create(req.body);
+      res.status(201).json({ message: "Menambahkan data student", data: student });
+    } catch (error) {
+      res.status(500).json({ message: "Kesalahan saat menambahkan student", error });
     }
-
-    student.nama = nama;
-
-    const data = {
-      message: `Mengupdate data student dengan ID: ${id}`,
-      data: student,
-    };
-    res.status(200).json(data);
   }
 
-  destroy(req, res) {
-    const { id } = req.params;
-
-    const studentIndex = students.findIndex((student) => student.id === parseInt(id));
-    if (studentIndex === -1) {
-      return res.status(404).json({
-        message: "Student tidak ditemukan",
-      });
+  async update(req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    const deletedStudent = students.splice(studentIndex, 1);
+    try {
+      const { id } = req.params;
+      const existingStudent = await Student.show(id);
+      if (!existingStudent) {
+        return res.status(404).json({ message: `Student dengan id ${id} tidak ditemukan` });
+      }
 
-    const data = {
-      message: `Menghapus data student dengan ID: ${id}`,
-      data: deletedStudent[0],
-    };
-    res.status(200).json(data);
+      const updatedStudent = await Student.update(id, req.body);
+      res.json({ message: `Memperbarui data student dengan id ${id}`, data: updatedStudent });
+    } catch (error) {
+      res.status(500).json({ message: "Kesalahan saat memperbarui student", error });
+    }
+  }
+
+  async destroy(req, res) {
+    try {
+      const { id } = req.params;
+      const existingStudent = await Student.show(id);
+      if (!existingStudent) {
+        return res.status(404).json({ message: `Student dengan id ${id} tidak ditemukan` });
+      }
+
+      await Student.delete(id);
+      res.json({ message: `Menghapus data student dengan id ${id}` });
+    } catch (error) {
+      res.status(500).json({ message: "Kesalahan saat menghapus student", error });
+    }
   }
 }
 
-module.exports = new StudentController();
+export default new StudentController();
